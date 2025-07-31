@@ -28,7 +28,7 @@ void clear_game_field(GameInfo_t* game_info) {
 void update_snake_coords(GameInfo_t* game_info) {
 
 }
-void updateCurrentState(GameInfo_t* game_info) {
+void init_game(GameInfo_t* game_info) {
 
     Snake snake;
     if (game_info->field != nullptr) {
