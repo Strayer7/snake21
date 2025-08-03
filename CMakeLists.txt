@@ -17,7 +17,8 @@ add_executable(${PROJECT_NAME} game.cpp
         front/frontend.h
         front/frontend.cpp
         back/backend.cpp
-        common.h)
+        common.h
+)
 
 # Свяжите с библиотеками Qt
 target_link_libraries(${PROJECT_NAME} Qt5::Core Qt5::Widgets) # Добавьте нужные ::Target'ы

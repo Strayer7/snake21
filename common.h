@@ -1,8 +1,6 @@
 #ifndef COMMON_H
 #define COMMON_H
 
-#include "back/backend.h"
-#include "front/frontend.h"
 
 typedef enum {
     Start,

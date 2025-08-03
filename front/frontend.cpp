@@ -1,30 +1,33 @@
 #include "frontend.h"
 
 game_field::game_field(GameInfo_t* game_data, QWidget* parent)
-    : QWidget(parent), // Вызов конструктора базового класса QWidget
-      game_data_(game_data) // Инициализация приватного члена game_data_
+    : QWidget(parent),
+      game_data_(game_data)
 {
     setFixedSize(WINDOW_WIDTH,WINDOW_HEIGHT);
+
+    timer_ = new QTimer(this);
+    connect(timer_,&QTimer::timeout,this,&game_field::update_paint);
+    timer_->start(500);
+}
+
+void game_field::update_paint() {
+    repaint();
 }
 
 void game_field::paintEvent(QPaintEvent *) {
     QPainter p(this);
     p.fillRect(rect(), QBrush(Qt::blue));
-
+    GameInfo_t info = updateCurrentState();
     int cell_width = this->width() / WIDTH;
     int cell_height = this->height() / HEIGHT;
     // Вычисления eyeMarginX, eyeMarginY, eyeRadius можно оставить здесь,
     // так как они зависят только от cell_width/cell_height
 
-    int eyeMarginX = cell_width * 0.2;
-    int eyeMarginY = cell_height * 0.2;
-    int eyeRadius = qMin(cell_width, cell_height) * 0.15;
-    // int tongueLength = cell_width * 0.3; // Аналогично для язычка
-
     for (int y = 0; y < HEIGHT; y++) {
         for (int x = 0; x < WIDTH; x++) {
-            if (game_data_ && game_data_->field) {
-                int value = game_data_->field[y][x];
+            // Используем 'inf.field', а не 'game_data_->field'
+            int value = info.field[y][x];
 
                 if (value == 1 || value == 2) { // Если это часть змеи
                     // 1. Нарисовать основу сегмента (тело или голова)
@@ -58,4 +61,3 @@ void game_field::paintEvent(QPaintEvent *) {
             }
         }
     }
-}
