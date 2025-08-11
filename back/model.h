@@ -3,6 +3,7 @@
 
 #include "../common.h"
 #include <vector>
+#include <random>
 
 #define SNAKE_START_POINT_X 5
 #define SNAKE_START_POINT_Y 12
@@ -41,16 +42,19 @@ private:
     SnakeModel snake;
     GameInfo_t game_info;
     Game_state state;
+    Coords apple_position;
 
 public:
     GameModel();
     ~GameModel();
-    
+
+
     GameInfo_t* get_game_info();
     const GameInfo_t* get_game_info() const;
     
     void update_game_field();
     void clear_game_field();
+    void draw_apple_on_field();
     void create_field();
     void free_field();
     
@@ -59,7 +63,10 @@ public:
     
     Game_state get_state() const;
     void set_state(Game_state new_state);
-    
+
+    Coords get_apple_position() const;
+    void set_apple_position();
+
 private:
     void initialize_game();
     void update_snake_on_field();

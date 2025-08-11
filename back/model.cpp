@@ -6,7 +6,7 @@ SnakeModel::SnakeModel() {
     body.push_back(Coords{SNAKE_START_POINT_X, SNAKE_START_POINT_Y+1});
     body.push_back(Coords{SNAKE_START_POINT_X, SNAKE_START_POINT_Y+2});
     body.push_back(Coords{SNAKE_START_POINT_X, SNAKE_START_POINT_Y+3});
-    snake_direction = Direction::Down;
+    snake_direction = Direction::Up;
 }
 
 const std::vector<Coords>& SnakeModel::get_body() const {
@@ -65,7 +65,7 @@ void SnakeModel::reset() {
 }
 
 // GameModel implementation
-GameModel::GameModel() : state(STATE_START) {
+GameModel::GameModel() : state(STATE_PLAY) {
     game_info.field = nullptr;
     game_info.next = nullptr;
     game_info.score = 0;
@@ -82,6 +82,7 @@ GameModel::~GameModel() {
 
 void GameModel::initialize_game() {
     create_field();
+    set_apple_position();
     update_game_field();
 }
 
@@ -123,6 +124,7 @@ void GameModel::clear_game_field() {
 void GameModel::update_game_field() {
     clear_game_field();
     update_snake_on_field();
+    draw_apple_on_field();
 }
 
 void GameModel::update_snake_on_field() {
@@ -187,3 +189,37 @@ Game_state GameModel::get_state() const {
 void GameModel::set_state(Game_state new_state) {
     state = new_state;
 }
+
+Coords GameModel::get_apple_position() const {
+    return apple_position;
+}
+
+void GameModel::set_apple_position() {
+    bool position_accepted = false;
+    const std::vector<Coords>& snake_body = snake.get_body();
+    while (position_accepted == false) {
+        int rand_apple_x = rand() % WIDTH;
+        int rand_apple_y = rand() % HEIGHT;
+        position_accepted = true;
+        for (size_t i = 0; i < snake_body.size(); i++) {
+            Coords snake_coords = snake_body[i];
+            if (snake_coords.x == rand_apple_x && snake_coords.y == rand_apple_y) {
+                position_accepted = false;
+                break;
+            }
+            }
+        if (position_accepted == true) {
+            apple_position.x = rand_apple_x;
+            apple_position.y = rand_apple_y;
+        }
+    }
+}
+
+void GameModel::draw_apple_on_field() {
+    // Добавляем яблоко на игровое поле
+    if (apple_position.x >= 0 && apple_position.x < WIDTH &&
+        apple_position.y >= 0 && apple_position.y < HEIGHT) {
+        game_info.field[apple_position.y][apple_position.x] = 3;
+        }
+}
+

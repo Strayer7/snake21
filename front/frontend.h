@@ -6,6 +6,7 @@
 #include <QWidget>
 #include <QPainter>
 #include <QTimer>
+#include <QKeyEvent>
 #include "../common.h"
 
 #define WINDOW_WIDTH 400
@@ -17,6 +18,7 @@ class game_field : public QWidget
 public:
     explicit game_field(QWidget* parent = nullptr);
     void paintEvent(QPaintEvent *event) override;
+    void keyPressEvent(QKeyEvent *event) override;
     
 private:
     QTimer *timer_;
