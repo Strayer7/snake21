@@ -13,11 +13,13 @@ set(CMAKE_AUTORCC ON) # Если используете .qrc файлы
 
 # Добавьте исполняемый файл
 add_executable(${PROJECT_NAME} game.cpp
-        back/backend.h
+        back/model.h
         front/frontend.h
         front/frontend.cpp
-        back/backend.cpp
+        back/model.cpp
         common.h
+        back/controller.cpp
+        back/controller.h
 )
 
 # Свяжите с библиотеками Qt
