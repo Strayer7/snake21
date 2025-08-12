@@ -60,6 +60,12 @@ void game_field::paintEvent(QPaintEvent *) {
 
     // Получаем состояние игры через контроллер
     GameInfo_t info = updateCurrentState();
+
+    if (info.field == nullptr) {
+        p.setPen(Qt::white);
+        p.drawText(rect(), Qt::AlignCenter, "Press ENTER to start");
+        return;
+    }
     int cell_width = this->width() / WIDTH;
     int cell_height = this->height() / HEIGHT;
 

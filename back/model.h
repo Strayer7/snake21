@@ -33,7 +33,7 @@ public:
     int get_size() const;
     Direction get_direction() const;
     void set_direction(Direction new_direction);
-    void move();
+    bool move(const Coords &apple_pos);
     void reset();
 };
 

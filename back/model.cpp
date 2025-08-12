@@ -1,5 +1,5 @@
-// game_model.cpp
 #include "model.h"
+#include <QDebug>
 
 SnakeModel::SnakeModel() {
     body.push_back(Coords{SNAKE_START_POINT_X, SNAKE_START_POINT_Y});
@@ -22,7 +22,6 @@ Direction SnakeModel::get_direction() const {
 }
 
 void SnakeModel::set_direction(Direction new_direction) {
-    // Проверка на 180-градусный поворот
     switch (snake_direction) {
         case Direction::Up:
             if (new_direction != Direction::Down) snake_direction = new_direction;
@@ -39,20 +38,26 @@ void SnakeModel::set_direction(Direction new_direction) {
     }
 }
 
-void SnakeModel::move() {
-    Direction current_dir = this->get_direction();
-    Coords old_head = this->body[0];
-    Coords new_head = old_head;
+bool SnakeModel::move(const Coords& apple_pos) {
+    Coords new_head = body[0];
+    Direction dir = get_direction();
 
-    switch (current_dir) {
+    switch (dir) {
         case Direction::Up:    new_head.y--; break;
         case Direction::Down:  new_head.y++; break;
         case Direction::Left:  new_head.x--; break;
         case Direction::Right: new_head.x++; break;
     }
 
-    this->body.insert(this->body.begin(), new_head);
-    this->body.pop_back();
+    body.insert(body.begin(), new_head);
+
+    bool ate = (new_head.x == apple_pos.x && new_head.y == apple_pos.y);
+
+    if (!ate) {
+        body.pop_back();
+    }
+
+    return ate;
 }
 
 void SnakeModel::reset() {
@@ -61,19 +66,21 @@ void SnakeModel::reset() {
     body.push_back(Coords{SNAKE_START_POINT_X, SNAKE_START_POINT_Y+1});
     body.push_back(Coords{SNAKE_START_POINT_X, SNAKE_START_POINT_Y+2});
     body.push_back(Coords{SNAKE_START_POINT_X, SNAKE_START_POINT_Y+3});
-    snake_direction = Direction::Down;
+    snake_direction = Direction::Up;
 }
 
 // GameModel implementation
-GameModel::GameModel() : state(STATE_PLAY) {
+GameModel::GameModel() : state(STATE_START) {
     game_info.field = nullptr;
     game_info.next = nullptr;
     game_info.score = 0;
     game_info.high_score = 0;
     game_info.level = 1;
-    game_info.speed = 1;
+    game_info.speed = 100;
     game_info.pause = 0;
-    initialize_game();
+
+    // 🔽 Раскомментируй следующую строку, если хочешь создать поле сразу:
+    // initialize_game();
 }
 
 GameModel::~GameModel() {
@@ -81,6 +88,8 @@ GameModel::~GameModel() {
 }
 
 void GameModel::initialize_game() {
+    srand(time(nullptr));
+    free_field();
     create_field();
     set_apple_position();
     update_game_field();
@@ -97,7 +106,7 @@ const GameInfo_t* GameModel::get_game_info() const {
 void GameModel::create_field() {
     game_info.field = new int*[HEIGHT];
     for (int i = 0; i < HEIGHT; i++) {
-        game_info.field[i] = new int[WIDTH]();
+        game_info.field[i] = new int[WIDTH]();  // () — обнуляет
     }
 }
 
@@ -122,12 +131,15 @@ void GameModel::clear_game_field() {
 }
 
 void GameModel::update_game_field() {
+    if (game_info.field == nullptr) return;
     clear_game_field();
     update_snake_on_field();
     draw_apple_on_field();
 }
 
 void GameModel::update_snake_on_field() {
+    if (game_info.field == nullptr) return;
+
     const std::vector<Coords>& snake_body = snake.get_body();
     for (size_t i = 0; i < snake_body.size(); i++) {
         Coords snake_coords = snake_body[i];
@@ -142,42 +154,101 @@ void GameModel::update_snake_on_field() {
     }
 }
 
+void GameModel::draw_apple_on_field() {
+    if (game_info.field == nullptr) return;
+
+    if (apple_position.x >= 0 && apple_position.x < WIDTH &&
+        apple_position.y >= 0 && apple_position.y < HEIGHT) {
+        game_info.field[apple_position.y][apple_position.x] = 3;
+    }
+}
+
 void GameModel::handle_user_input(UserAction_t action, bool hold) {
+    Q_UNUSED(hold)
+
     switch (action) {
         case Start:
             if (state == STATE_START || state == STATE_GAME_OVER) {
                 state = STATE_PLAY;
+                game_info.score = 0;
+                game_info.pause = 0;
                 snake.reset();
                 initialize_game();
             }
             break;
         case Pause:
-            game_info.pause = !game_info.pause;
+            if (state == STATE_PLAY) {
+                game_info.pause = !game_info.pause;
+            }
             break;
         case Terminate:
             state = STATE_GAME_OVER;
             break;
         case Up:
-            if (!game_info.pause) snake.set_direction(Direction::Up);
+            if (state == STATE_PLAY && !game_info.pause) {
+                snake.set_direction(Direction::Up);
+            }
             break;
         case Down:
-            if (!game_info.pause) snake.set_direction(Direction::Down);
+            if (state == STATE_PLAY && !game_info.pause) {
+                snake.set_direction(Direction::Down);
+            }
             break;
         case Left:
-            if (!game_info.pause) snake.set_direction(Direction::Left);
+            if (state == STATE_PLAY && !game_info.pause) {
+                snake.set_direction(Direction::Left);
+            }
             break;
         case Right:
-            if (!game_info.pause) snake.set_direction(Direction::Right);
+            if (state == STATE_PLAY && !game_info.pause) {
+                snake.set_direction(Direction::Right);
+            }
             break;
         case Action:
-            // Дополнительные действия
+            // Дополнительные действия (по желанию)
             break;
     }
 }
 
 void GameModel::update_game_state() {
+    if (game_info.field == nullptr) return;
+
     if (state == STATE_PLAY && !game_info.pause) {
-        snake.move();
+        Coords new_head = snake.get_body()[0];
+        Direction dir = snake.get_direction();
+
+        switch (dir) {
+            case Direction::Up:    new_head.y--; break;
+            case Direction::Down:  new_head.y++; break;
+            case Direction::Left:  new_head.x--; break;
+            case Direction::Right: new_head.x++; break;
+        }
+
+        // Столкновение со стеной
+        if (new_head.x < 0 || new_head.x >= WIDTH || new_head.y < 0 || new_head.y >= HEIGHT) {
+            state = STATE_GAME_OVER;
+            return;
+        }
+
+        // Само на себя
+        const auto& body = snake.get_body();
+        for (size_t i = 1; i < body.size(); ++i) {  // начиная с 1, т.к. голова = new_head
+            if (new_head.x == body[i].x && new_head.y == body[i].y) {
+                state = STATE_GAME_OVER;
+                return;
+            }
+        }
+
+        bool ate = snake.move(apple_position);
+
+        if (ate) {
+            game_info.score += 10;
+            if (game_info.score > game_info.high_score) {
+                game_info.high_score = game_info.score;
+            }
+            set_apple_position();
+        }
+
         update_game_field();
     }
 }
@@ -195,31 +266,45 @@ Coords GameModel::get_apple_position() const {
 }
 
 void GameModel::set_apple_position() {
-    bool position_accepted = false;
-    const std::vector<Coords>& snake_body = snake.get_body();
-    while (position_accepted == false) {
-        int rand_apple_x = rand() % WIDTH;
-        int rand_apple_y = rand() % HEIGHT;
-        position_accepted = true;
-        for (size_t i = 0; i < snake_body.size(); i++) {
-            Coords snake_coords = snake_body[i];
-            if (snake_coords.x == rand_apple_x && snake_coords.y == rand_apple_y) {
-                position_accepted = false;
+    const auto& body = snake.get_body();
+    const int max_attempts = 100;
+
+    // Попробуем случайно (с ограничением)
+    for (int i = 0; i < max_attempts; ++i) {
+        int x = rand() % WIDTH;
+        int y = rand() % HEIGHT;
+
+        bool occupied = false;
+        for (const auto& seg : body) {
+            if (seg.x == x && seg.y == y) {
+                occupied = true;
                 break;
             }
-            }
-        if (position_accepted == true) {
-            apple_position.x = rand_apple_x;
-            apple_position.y = rand_apple_y;
+        }
+
+        if (!occupied) {
+            apple_position = {x, y};
+            return;
         }
     }
-}
 
-void GameModel::draw_apple_on_field() {
-    // Добавляем яблоко на игровое поле
-    if (apple_position.x >= 0 && apple_position.x < WIDTH &&
-        apple_position.y >= 0 && apple_position.y < HEIGHT) {
-        game_info.field[apple_position.y][apple_position.x] = 3;
+    // Если не получилось — ищем первую свободную
+    for (int y = 0; y < HEIGHT; ++y) {
+        for (int x = 0; x < WIDTH; ++x) {
+            bool occupied = false;
+            for (const auto& seg : body) {
+                if (seg.x == x && seg.y == y) {
+                    occupied = true;
+                    break;
+                }
+            }
+            if (!occupied) {
+                apple_position = {x, y};
+                return;
+            }
         }
-}
+    }
 
+    // На крайний случай
+    apple_position = {0, 0};
+}
