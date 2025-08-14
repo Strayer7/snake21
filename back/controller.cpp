@@ -1,10 +1,9 @@
-// game_controller.cpp
 #include "controller.h"
 #include "model.h"
 
 static GameModel* game_model = nullptr;
 
-static GameModel& get_game_model() {
+GameModel& get_game_model() {
     if (game_model == nullptr) {
         game_model = new GameModel();
     }

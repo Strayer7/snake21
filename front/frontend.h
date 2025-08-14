@@ -9,22 +9,26 @@
 #include <QKeyEvent>
 #include "../common.h"
 
-#define WINDOW_WIDTH 400
+#define WINDOW_WIDTH  600
 #define WINDOW_HEIGHT 800
 
 class game_field : public QWidget
 {
     Q_OBJECT
+
 public:
     explicit game_field(QWidget* parent = nullptr);
+
+protected:
     void paintEvent(QPaintEvent *event) override;
     void keyPressEvent(QKeyEvent *event) override;
-    
-private:
-    QTimer *timer_;
-    
+    void keyReleaseEvent(QKeyEvent *event) override;
+
 private slots:
     void update_paint();
+
+private:
+    QTimer *timer_;
 };
 
-#endif //FRONTEND_H
+#endif // FRONTEND_H

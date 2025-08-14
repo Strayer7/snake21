@@ -4,6 +4,9 @@
 #include "../common.h"
 #include <vector>
 #include <random>
+#include <fstream>
+#include <iostream>
+#include <sstream>
 
 #define SNAKE_START_POINT_X 5
 #define SNAKE_START_POINT_Y 12
@@ -43,6 +46,7 @@ private:
     GameInfo_t game_info;
     Game_state state;
     Coords apple_position;
+    bool is_speed_boost_active_;
 
 public:
     GameModel();
@@ -51,6 +55,7 @@ public:
 
     GameInfo_t* get_game_info();
     const GameInfo_t* get_game_info() const;
+    int GameModel::get_speed() const;
     
     void update_game_field();
     void clear_game_field();
@@ -66,10 +71,14 @@ public:
 
     Coords get_apple_position() const;
     void set_apple_position();
+    bool is_speed_boost_active() const;
+
 
 private:
     void initialize_game();
     void update_snake_on_field();
+    void save_high_score();
+    int load_high_score();
 };
 
 #endif

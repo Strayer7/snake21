@@ -70,11 +70,11 @@ void SnakeModel::reset() {
 }
 
 // GameModel implementation
-GameModel::GameModel() : state(STATE_START) {
+GameModel::GameModel() : state(STATE_START), is_speed_boost_active_(false) {
     game_info.field = nullptr;
     game_info.next = nullptr;
     game_info.score = 0;
-    game_info.high_score = 0;
+    game_info.high_score = load_high_score();
     game_info.level = 1;
     game_info.speed = 100;
     game_info.pause = 0;
@@ -88,7 +88,6 @@ GameModel::~GameModel() {
 }
 
 void GameModel::initialize_game() {
-    srand(time(nullptr));
     free_field();
     create_field();
     set_apple_position();
@@ -170,7 +169,9 @@ void GameModel::handle_user_input(UserAction_t action, bool hold) {
         case Start:
             if (state == STATE_START || state == STATE_GAME_OVER) {
                 state = STATE_PLAY;
-                game_info.score = 0;
+                game_info.score = 0;           // ← ТОЛЬКО score сбрасывается
+                game_info.level = 1;
+                game_info.speed = 250;
                 game_info.pause = 0;
                 snake.reset();
                 initialize_game();
@@ -205,7 +206,9 @@ void GameModel::handle_user_input(UserAction_t action, bool hold) {
             }
             break;
         case Action:
-            // Дополнительные действия (по желанию)
+            if (state == STATE_PLAY && !game_info.pause) {
+                is_speed_boost_active_ = hold;  // true при удержании, false при отпускании
+            }
             break;
     }
 }
@@ -243,12 +246,25 @@ void GameModel::update_game_state() {
 
         if (ate) {
             game_info.score += 10;
+
             if (game_info.score > game_info.high_score) {
                 game_info.high_score = game_info.score;
+                save_high_score();
             }
-            set_apple_position();
-        }
 
+            set_apple_position();
+
+            // === Обновление уровня и скорости ===
+            int new_level = (game_info.score / 50) + 1;
+            new_level = std::min(new_level, 10);  // максимум 10
+
+            if (new_level != game_info.level) {
+                game_info.level = new_level;
+
+                // Линейное уменьшение задержки от 250 мс (уровень 1) до 100 мс (уровень 10)
+                game_info.speed = 250 - (150 * (new_level - 1)) / 9;
+            }
+        }
         update_game_field();
     }
 }
@@ -307,4 +323,36 @@ void GameModel::set_apple_position() {
 
     // На крайний случай
     apple_position = {0, 0};
+}
+
+int GameModel::get_speed() const {
+    return game_info.speed;
+}
+
+static const char* HIGH_SCORE_FILE = "high_score.txt";
+
+int GameModel::load_high_score() {
+    std::ifstream file(HIGH_SCORE_FILE);
+    int loaded_score = 0;
+    if (file.is_open()) {
+        std::string line;
+        std::getline(file, line);
+        std::stringstream ss(line);
+        ss >> loaded_score;
+        file.close();
+    }
+    return loaded_score;
+}
+
+void GameModel::save_high_score() {
+    std::ofstream file(HIGH_SCORE_FILE);
+    if (file.is_open()) {
+        file << game_info.high_score;
+        file.close();
+    }
+}
+
+
+bool GameModel::is_speed_boost_active() const {
+    return is_speed_boost_active_;
 }
