@@ -55,7 +55,7 @@ public:
 
     GameInfo_t* get_game_info();
     const GameInfo_t* get_game_info() const;
-    int GameModel::get_speed() const;
+    int get_speed() const;
     
     void update_game_field();
     void clear_game_field();
